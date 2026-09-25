@@ -65,6 +65,11 @@ endif()
 add_executable(eliott-hub
     src/main.cpp
     src/App.cpp
+    src/PathUtils.cpp
+    src/NetworkUtils.cpp
+    src/ProcessLauncher.cpp
+    src/Updater.cpp
+    src/ProjectRepository.cpp
 )
 
 target_include_directories(eliott-hub PRIVATE
@@ -73,6 +78,7 @@ target_include_directories(eliott-hub PRIVATE
 
 target_compile_definitions(eliott-hub PRIVATE
     ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets"
+    HUB_VERSION="v${PROJECT_VERSION}"
 )
 
 target_link_libraries(eliott-hub PRIVATE
