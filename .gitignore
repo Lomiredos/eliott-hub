@@ -1,0 +1,9 @@
+build/
+compile_commands.json
+data.txt
+version.txt
+hub_version.txt
+imgui.ini
+eliott-hub_new
+eliott-hub_new.exe
+eliott-hub_update.bat
