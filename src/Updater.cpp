@@ -109,26 +109,14 @@ void Updater::StartCheckForUpdate(TargetKind kind) {
 
     std::filesystem::path jsonPath = exeDir / (std::string(versionFileName) +
                                                 ".check.json");
-    std::filesystem::path donePath = jsonPath;
-    donePath += ".done";
     std::error_code rmEc;
     std::filesystem::remove(jsonPath, rmEc);
-    std::filesystem::remove(donePath, rmEc);
 
-    std::string cmd = "(curl -s -H \"User-Agent: ee-hub\" -o \"" +
-                       jsonPath.string() + "\" \"" + url +
-                       "\"; echo $? > \"" + donePath.string() + "\") &";
+    // Already on a worker thread: run curl synchronously. No shell-specific
+    // syntax here, since std::system uses cmd.exe on Windows.
+    std::string cmd = "curl -s -H \"User-Agent: ee-hub\" -o \"" +
+                       jsonPath.string() + "\" \"" + url + "\"";
     std::system(cmd.c_str());
-
-    while (!std::filesystem::exists(donePath)) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-
-    std::ifstream doneFile(donePath);
-    std::string exitCodeStr;
-    std::getline(doneFile, exitCodeStr);
-    doneFile.close();
-    std::filesystem::remove(donePath, rmEc);
 
     std::ifstream jsonFile(jsonPath);
     std::stringstream jsonStream;
@@ -187,21 +175,23 @@ void Updater::StartDownload(const std::string &url,
     std::error_code rmEc;
     std::filesystem::remove(destPath, rmEc);
 
-    std::filesystem::path donePath = destPath;
-    donePath += ".done";
-    std::filesystem::remove(donePath, rmEc);
-
     std::filesystem::path statusPath = destPath;
     statusPath += ".status";
     std::filesystem::remove(statusPath, rmEc);
 
-    std::string cmd = "(curl -sL -o \"" + destPath.string() +
+    // Run curl on its own thread so this one can poll progress. No
+    // shell-specific syntax, since std::system uses cmd.exe on Windows.
+    std::string cmd = "curl -sL -o \"" + destPath.string() +
                        "\" -w \"%{http_code}\" \"" + url + "\" > \"" +
-                       statusPath.string() + "\"; echo $? > \"" +
-                       donePath.string() + "\") &";
-    std::system(cmd.c_str());
+                       statusPath.string() + "\"";
+    std::atomic<bool> curlDone{false};
+    int exitCode = -1;
+    std::thread curlThread([&]() {
+      exitCode = std::system(cmd.c_str());
+      curlDone = true;
+    });
 
-    while (!std::filesystem::exists(donePath)) {
+    while (!curlDone) {
       std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
       if (totalSize > 0 && std::filesystem::exists(destPath)) {
@@ -214,11 +204,8 @@ void Updater::StartDownload(const std::string &url,
       }
     }
 
-    std::ifstream doneFile(donePath);
-    std::string exitCodeStr;
-    std::getline(doneFile, exitCodeStr);
-    doneFile.close();
-    std::filesystem::remove(donePath, rmEc);
+    curlThread.join();
+    std::string exitCodeStr = std::to_string(exitCode);
 
     std::ifstream statusFile(statusPath);
     std::string httpStatus;
