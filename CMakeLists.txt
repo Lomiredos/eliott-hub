@@ -86,3 +86,7 @@ target_link_libraries(eliott-hub PRIVATE
     OpenGL::GL
     tinyfiledialogs
 )
+
+if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_options(eliott-hub PRIVATE -static)
+endif()
