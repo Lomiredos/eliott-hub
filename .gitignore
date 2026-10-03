@@ -1,4 +1,7 @@
 build/
+build-windows/
+.cache
+cmake/
 compile_commands.json
 data.txt
 version.txt
