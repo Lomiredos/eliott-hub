@@ -99,6 +99,15 @@ void writeEntityExemple(std::string _path) {
 // contenu) a chaque creation de composant/systeme -> jamais touchees a la
 // main, jamais besoin de retoucher main.cpp.
 void writeEmptyRegisters(std::string _path) {
+  std::ofstream(_path + "/Components/RegisterComponents.hpp")
+      << "#pragma once\n\n"
+         "#include <nlohmann/json.hpp>\n\n"
+         "void buildComponentCatalog(nlohmann::json &_components);\n";
+  std::ofstream(_path + "/Components/RegisterComponents.cpp")
+      << "#include \"Components/RegisterComponents.hpp\"\n\n"
+         "#include \"visu/reflect/CatalogGen.hpp\"\n\n"
+         "void buildComponentCatalog(nlohmann::json &_components)\n{\n}\n";
+
   std::ofstream(_path + "/Components/RegisterWorldComponents.hpp")
       << "#pragma once\n\n"
          "#include \"visu/scene/WorldLoader.hpp\"\n\n"
