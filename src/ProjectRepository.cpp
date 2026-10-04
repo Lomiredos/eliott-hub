@@ -16,20 +16,22 @@ void writeCMake(std::string _path, std::string _projectName) {
 
   std::ofstream outfile(_path + "/CMakeLists.txt");
 
-  std::string data = "cmake_minimum_required(VERSION 3.20)\n \
-      project(" + _projectName +
-                     " VERSION 1.0.0 LANGUAGES CXX)\n \
-      set(CMAKE_CXX_STANDARD "
-                     "20)\n \
-      set(CMAKE_CXX_STANDARD_REQUIRERED "
-                     "ON)\n \
-      set(CMAKE_EXPORT_COMPILE_COMMANDS "
-                     "ON)\n \
-      add_subdirectory(extern/eliott-engine)\n \
-      add_executable(" +
-                     _projectName + " src/main.cpp)\n \
-      target_link_libraries(" +
-                     _projectName + " PRIVATE eliott-engine)\n\n";
+  std::string data = "cmake_minimum_required(VERSION 3.20)\n"
+                     "project(" + _projectName + " VERSION 1.0.0 LANGUAGES CXX)\n"
+                     "set(CMAKE_CXX_STANDARD 20)\n"
+                     "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
+                     "set(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n\n"
+                     "add_subdirectory(extern/eliott-engine-3d)\n\n"
+                     "# Systems/, Components/ et Scenes/ sont generes par EE-Visu : ce glob\n"
+                     "# evite d'avoir a toucher ce CMakeLists a chaque creation.\n"
+                     "file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS\n"
+                     "    \"${CMAKE_CURRENT_SOURCE_DIR}/Systems/*.cpp\"\n"
+                     "    \"${CMAKE_CURRENT_SOURCE_DIR}/Components/*.cpp\"\n"
+                     "    \"${CMAKE_CURRENT_SOURCE_DIR}/Scenes/*.cpp\"\n"
+                     ")\n\n"
+                     "add_executable(" + _projectName + " src/main.cpp ${GAME_SOURCES})\n"
+                     "target_include_directories(" + _projectName + " PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})\n"
+                     "target_link_libraries(" + _projectName + " PRIVATE ee-core)\n";
 
   outfile << data << std::endl;
   outfile.close();
@@ -44,41 +46,24 @@ void writeGitIgnore(std::string _path) {
 
 void writeMain(std::string _path, std::string _projectName) {
   std::ofstream outfile(_path + "/src/main.cpp");
-  std::string data = "#include \"../Scenes/BaseScene.hpp\"\n \
-                      #include \"engine/Engine.hpp\"\n\n \
-                      int main(){ \
-                      ee::Engine engine(\"" +
-                     _projectName +
-                     "\", 800, 800); //##TODO::add windowSize controle\n \
-                      engine.getSceneManager().addScene(std::make_unique<BaseScene>(ee::math::Rect<float>(0, 0, 800, 800))); //##TODO::WindowSize Control\n \
-                      engine.run();\n \
-                      return 0; \n \
-                      }";
-  outfile << data;
-  outfile.close();
-}
-
-void writeBaseScene(std::string _path) {
-
-  std::ofstream outfile(_path + "/Scenes/BaseScene.hpp");
-  std::string data = "#pragma once\n \
-                      #include \"engine/Scene.hpp\"\n\n \
-                      class BaseScene : public ee::Scene {\n \
-                      public:\n \
-                      BaseScene(ee::math::Rect<float> _bounds) : ee::Scene(_bounds) {}\n \
-                      void onEnter(ee::renderer::Renderer &_renderer) override {}\n \
-                      void onExit() override {} \n \
-                      void onEvent(SDL_Event &_e) override {} \n \
-                      void onUpdate(float _dt) override {}\n \
-                      void onRender(ee::renderer::Renderer & _renderer) override {}\n \
-};\n ";
+  std::string data = "#include \"visu/runtime/App.hpp\"\n"
+                     "#include \"Components/RegisterWorldComponents.hpp\"\n"
+                     "#include \"Systems/RegisterSystems.hpp\"\n\n"
+                     "int main()\n"
+                     "{\n"
+                     "    ee::runtime::Config cfg;\n"
+                     "    cfg.projectRoot = \".\";\n"
+                     "    cfg.sceneName = \"BaseScene\";\n"
+                     "    cfg.windowTitle = \"" + _projectName + "\";\n\n"
+                     "    return ee::runtime::run(cfg, registerGameComponents, registerGameSystems);\n"
+                     "}\n";
   outfile << data;
   outfile.close();
 }
 
 void writeEntityExemple(std::string _path) {
 
-  std::ofstream outfile(_path + "Assets/ScenesDatas/BaseScene.json");
+  std::ofstream outfile(_path + "/Assets/ScenesDatas/BaseScene.json");
 
   std::string data = R"(
   {
@@ -87,20 +72,20 @@ void writeEntityExemple(std::string _path) {
         {
           "name" : "TransformComponent",
           "values" : {
-            "rotX" : 0.0,
-            "rotY" : 0.0,
-            "rotZ" : 0.0,
-            "scaleX" : 1.0,
-            "scaleY" : 1.0,
-            "scaleZ" : 1.0,
-            "x" : 0.0,
-            "y" : 0.0,
-            "z" : 0.0
+            "EuleurX" : 0.0,
+            "EuleurY" : 0.0,
+            "EuleurZ" : 0.0,
+            "ScaleX" : 1.0,
+            "ScaleY" : 1.0,
+            "ScaleZ" : 1.0,
+            "PositionX" : 0.0,
+            "PositionY" : 0.0,
+            "PositionZ" : 0.0
           }
         },
         {
           "name" : "RectComponent",
-          "values" : {"depth" : 1.0, "height" : 1.0, "width" : 1.0}
+          "values" : {"sizeX" : 1.0, "sizeY" : 1.0, "sizeZ" : 1.0}
         }
       ],
       "name" : "exemple"
@@ -110,9 +95,31 @@ void writeEntityExemple(std::string _path) {
   outfile.close();
 }
 
+// Versions vides des registres : ecrites une fois a la creation pour que
+// main.cpp compile immediatement. ee-visu les regenere (avec le vrai
+// contenu) a chaque creation de composant/systeme -> jamais touchees a la
+// main, jamais besoin de retoucher main.cpp.
+void writeEmptyRegisters(std::string _path) {
+  std::ofstream(_path + "/Components/RegisterWorldComponents.hpp")
+      << "#pragma once\n\n"
+         "#include \"visu/scene/WorldLoader.hpp\"\n\n"
+         "void registerGameComponents(ee::scene::WorldRegistry &_reg);\n";
+  std::ofstream(_path + "/Components/RegisterWorldComponents.cpp")
+      << "#include \"Components/RegisterWorldComponents.hpp\"\n\n"
+         "void registerGameComponents(ee::scene::WorldRegistry &_reg)\n{\n}\n";
+
+  std::ofstream(_path + "/Systems/RegisterSystems.hpp")
+      << "#pragma once\n\n"
+         "#include \"visu/scene/SystemHost.hpp\"\n\n"
+         "void registerGameSystems(ee::scene::SystemHost &_host);\n";
+  std::ofstream(_path + "/Systems/RegisterSystems.cpp")
+      << "#include \"Systems/RegisterSystems.hpp\"\n\n"
+         "void registerGameSystems(ee::scene::SystemHost &_host)\n{\n}\n";
+}
+
 std::string addsubmodule(std::string _submoduleURL) {
   std::string commande =
-      "git submodule add " + _submoduleURL + " extern/eliott-engine";
+      "git submodule add " + _submoduleURL + " extern/eliott-engine-3d";
   int result = std::system(commande.c_str());
   if (result != 0)
     return "submodule E-engine canot be add.";
@@ -128,7 +135,7 @@ std::string gitCommandeSetup(std::string _path, std::string _submoduleURL) {
   if (result != 0)
     return "git init dont work, wtf ?";
   std::string value =
-      addsubmodule("https://github.com/Lomiredos/eliott-engine");
+      addsubmodule("https://github.com/Lomiredos/eliott-engine-3d");
   return value;
 }
 
@@ -196,10 +203,11 @@ bool ProjectRepository::CreateProject(const std::string &name,
   writeCMake(projectPath.string(), name);
   writeGitIgnore(projectPath.string());
   writeMain(projectPath.string(), name);
-  writeBaseScene(projectPath.string());
+  writeEntityExemple(projectPath.string());
+  writeEmptyRegisters(projectPath.string());
   std::filesystem::path basePath = std::filesystem::current_path();
   std::filesystem::current_path(location + "/" + name);
-  gitCommandeSetup(location, "https://github.com/Lomiredos/eliott-engine");
+  gitCommandeSetup(location, "https://github.com/Lomiredos/eliott-engine-3d");
   cmakeCommandeSetup(location);
   std::filesystem::current_path(basePath);
 
