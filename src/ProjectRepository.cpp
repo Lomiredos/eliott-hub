@@ -16,22 +16,30 @@ void writeCMake(std::string _path, std::string _projectName) {
 
   std::ofstream outfile(_path + "/CMakeLists.txt");
 
-  std::string data = "cmake_minimum_required(VERSION 3.20)\n"
-                     "project(" + _projectName + " VERSION 1.0.0 LANGUAGES CXX)\n"
-                     "set(CMAKE_CXX_STANDARD 20)\n"
-                     "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
-                     "set(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n\n"
-                     "add_subdirectory(extern/eliott-engine-3d)\n\n"
-                     "# Systems/, Components/ et Scenes/ sont generes par EE-Visu : ce glob\n"
-                     "# evite d'avoir a toucher ce CMakeLists a chaque creation.\n"
-                     "file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS\n"
-                     "    \"${CMAKE_CURRENT_SOURCE_DIR}/Systems/*.cpp\"\n"
-                     "    \"${CMAKE_CURRENT_SOURCE_DIR}/Components/*.cpp\"\n"
-                     "    \"${CMAKE_CURRENT_SOURCE_DIR}/Scenes/*.cpp\"\n"
-                     ")\n\n"
-                     "add_executable(" + _projectName + " src/main.cpp ${GAME_SOURCES})\n"
-                     "target_include_directories(" + _projectName + " PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})\n"
-                     "target_link_libraries(" + _projectName + " PRIVATE ee-core)\n";
+  std::string data =
+      "cmake_minimum_required(VERSION 3.20)\n"
+      "project(" +
+      _projectName +
+      " VERSION 1.0.0 LANGUAGES CXX)\n"
+      "set(CMAKE_CXX_STANDARD 20)\n"
+      "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
+      "set(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n\n"
+      "add_subdirectory(extern/eliott-engine-3d)\n\n"
+      "# Systems/, Components/ et Scenes/ sont generes par EE-Visu : ce glob\n"
+      "# ducoup normalement tu touche pas a ce fichier.\n"
+      "file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS\n"
+      "    \"${CMAKE_CURRENT_SOURCE_DIR}/Systems/*.cpp\"\n"
+      "    \"${CMAKE_CURRENT_SOURCE_DIR}/Components/*.cpp\"\n"
+      "    \"${CMAKE_CURRENT_SOURCE_DIR}/Scenes/*.cpp\"\n"
+      ")\n\n"
+      "add_executable(" +
+      _projectName +
+      " src/main.cpp ${GAME_SOURCES})\n"
+      "target_include_directories(" +
+      _projectName +
+      " PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})\n"
+      "target_link_libraries(" +
+      _projectName + " PRIVATE ee-core)\n";
 
   outfile << data << std::endl;
   outfile.close();
@@ -53,8 +61,11 @@ void writeMain(std::string _path, std::string _projectName) {
                      "{\n"
                      "    ee::runtime::Config cfg;\n"
                      "    cfg.sceneName = \"BaseScene\";\n"
-                     "    cfg.windowTitle = \"" + _projectName + "\";\n\n"
-                     "    return ee::runtime::run(cfg, registerGameComponents, registerGameSystems);\n"
+                     "    cfg.windowTitle = \"" +
+                     _projectName +
+                     "\";\n\n"
+                     "    return ee::runtime::run(cfg, registerGameComponents, "
+                     "registerGameSystems);\n"
                      "}\n";
   outfile << data;
   outfile.close();
@@ -94,10 +105,6 @@ void writeEntityExemple(std::string _path) {
   outfile.close();
 }
 
-// Versions vides des registres : ecrites une fois a la creation pour que
-// main.cpp compile immediatement. ee-visu les regenere (avec le vrai
-// contenu) a chaque creation de composant/systeme -> jamais touchees a la
-// main, jamais besoin de retoucher main.cpp.
 void writeEmptyRegisters(std::string _path) {
   std::ofstream(_path + "/Components/RegisterWorldComponents.hpp")
       << "#pragma once\n\n"
@@ -133,8 +140,7 @@ std::string gitCommandeSetup(std::string _path, std::string _submoduleURL) {
   int result = std::system("git init");
   if (result != 0)
     return "git init dont work, wtf ?";
-  std::string value =
-      addsubmodule("https://github.com/Lomiredos/eliott-engine-3d");
+  std::string value = addsubmodule(_submoduleURL);
   return value;
 }
 
