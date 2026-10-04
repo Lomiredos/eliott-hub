@@ -52,7 +52,6 @@ void writeMain(std::string _path, std::string _projectName) {
                      "int main()\n"
                      "{\n"
                      "    ee::runtime::Config cfg;\n"
-                     "    cfg.projectRoot = \".\";\n"
                      "    cfg.sceneName = \"BaseScene\";\n"
                      "    cfg.windowTitle = \"" + _projectName + "\";\n\n"
                      "    return ee::runtime::run(cfg, registerGameComponents, registerGameSystems);\n"
