@@ -1,6 +1,6 @@
 #include "ee-hub/App.hpp"
 
-#include "ee-hub/PortableCMake.hpp"
+#include "ee-hub/PortableTools.hpp"
 #include "ee-hub/ProcessLauncher.hpp"
 #include "ee-hub/ProjectRepository.hpp"
 #include "ee-hub/Updater.hpp"
@@ -56,7 +56,7 @@ bool App::init() {
 
   // cmake telecharge par le hub (PC sans admin) : visible pour nos commandes
   // et pour l'editeur lance depuis le hub.
-  PortableCMake::AddToPath();
+  PortableTools::AddToPath();
 
   m_launcher = std::make_unique<ProcessLauncher>(m_window, m_popups);
   m_updater = std::make_unique<Updater>(m_window, m_popups);

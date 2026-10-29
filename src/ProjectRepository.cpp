@@ -1,6 +1,6 @@
 #include "ee-hub/ProjectRepository.hpp"
 
-#include "ee-hub/PortableCMake.hpp"
+#include "ee-hub/PortableTools.hpp"
 #include "ee-hub/ProcessLauncher.hpp"
 
 #include "imgui.h"
@@ -54,7 +54,8 @@ std::vector<MissingTool> findMissingTools() {
     missing.push_back({"git", install + gitPackage});
   // Pas de cmake : pas bloquant, le hub en telecharge un portable a la
   // creation du projet (pas besoin des droits admin).
-  if (!hasCompiler)
+  // Pas de compilateur sous Windows : pas bloquant non plus, WinLibs portable.
+  if (!hasCompiler && !PortableTools::IsSupported(PortableTools::Tool::Compiler))
     missing.push_back({"compilateur C++", install + compilerPackage});
   return missing;
 }
@@ -249,15 +250,30 @@ std::string gitCommandeSetup(std::string _path, std::string _submoduleURL,
 std::string cmakeCommandeSetup(std::string _path, std::atomic<int> &_percent,
                                std::atomic<const char *> &_status) {
 
+  // PC sans droits admin : ce qui manque est telecharge dans le hub.
   if (!isToolInstalled("cmake")) {
-    // Pas de cmake (PC sans droits admin) : version portable dans le hub.
     _status = "Telechargement de CMake...";
-    std::string error = PortableCMake::Install(_percent, 35, 45);
+    std::string error =
+        PortableTools::Install(PortableTools::Tool::CMake, _percent, 35, 40,
+                               &_status, "Extraction de CMake...");
     if (!error.empty())
-      return error;
-    PortableCMake::AddToPath();
+      return "CMake : " + error;
+    PortableTools::AddToPath();
     if (!isToolInstalled("cmake"))
       return "cmake portable installe mais introuvable";
+  }
+  bool hasCompiler = isToolInstalled("g++") || isToolInstalled("clang++");
+  if (!hasCompiler && PortableTools::IsSupported(PortableTools::Tool::Compiler)) {
+    _status = "Telechargement du compilateur (~280 Mo)...";
+    std::string error =
+        PortableTools::Install(PortableTools::Tool::Compiler, _percent, 40, 50,
+                               &_status,
+                               "Extraction du compilateur (~1 Go, quelques minutes)...");
+    if (!error.empty())
+      return "compilateur : " + error;
+    PortableTools::AddToPath();
+    if (!isToolInstalled("g++"))
+      return "compilateur portable installe mais introuvable";
   }
   std::string buildDir = quotePath(_path + "/build");
   std::string configure = "cmake -S " + quotePath(_path) + " -B " + buildDir;

@@ -61,7 +61,7 @@ add_executable(eliott-hub
     src/ProcessLauncher.cpp
     src/Updater.cpp
     src/ProjectRepository.cpp
-    src/PortableCMake.cpp
+    src/PortableTools.cpp
 )
 
 target_include_directories(eliott-hub PRIVATE
