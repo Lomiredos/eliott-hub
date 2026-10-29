@@ -16,7 +16,7 @@
 namespace {
 
 const char *kUpdateRepoOwner = "Lomiredos";
-const char *kUpdateRepoName = "EE-visu";
+const char *kUpdateRepoName = "eliott-visu";
 
 const char *kHubRepoOwner = "Lomiredos";
 const char *kHubRepoName = "eliott-hub";
@@ -319,7 +319,7 @@ void Updater::ProcessCheckResult() {
 }
 
 void Updater::DrawCheckButtons() {
-  if (ImGui::Button("Check Update")) {
+  if (ImGui::Button("Check Visu Update")) {
     StartCheckForUpdate(TargetKind::Visu);
   }
   ImGui::SameLine();

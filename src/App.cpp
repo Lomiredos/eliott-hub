@@ -1,5 +1,6 @@
 #include "ee-hub/App.hpp"
 
+#include "ee-hub/PortableCMake.hpp"
 #include "ee-hub/ProcessLauncher.hpp"
 #include "ee-hub/ProjectRepository.hpp"
 #include "ee-hub/Updater.hpp"
@@ -52,6 +53,10 @@ bool App::init() {
   ImGui::StyleColorsDark();
   ImGui_ImplGlfw_InitForOpenGL(m_window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
+
+  // cmake telecharge par le hub (PC sans admin) : visible pour nos commandes
+  // et pour l'editeur lance depuis le hub.
+  PortableCMake::AddToPath();
 
   m_launcher = std::make_unique<ProcessLauncher>(m_window, m_popups);
   m_updater = std::make_unique<Updater>(m_window, m_popups);

@@ -41,7 +41,7 @@ void ProcessLauncher::DrawPopups() {
     ImGui::TextColored(
         ImVec4(1.0f, 0.4f, 0.4f, 1.0f),
         "EE-Visu n'est pas encore telecharge sur cette machine.");
-    ImGui::Text("Clique sur \"Check Update\" puis \"Update\" pour "
+    ImGui::Text("Clique sur \"Check Visu Update\" puis \"Update\" pour "
                 "l'installer.");
     ImGui::Separator();
     if (ImGui::Button("OK", ImVec2(120, 0))) {

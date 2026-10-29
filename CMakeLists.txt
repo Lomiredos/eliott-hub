@@ -44,23 +44,14 @@ target_link_libraries(imgui PUBLIC glfw)
 find_package(OpenGL REQUIRED)
 
 FetchContent_Declare(
-    tinyfiledialogs
-    GIT_REPOSITORY https://github.com/native-toolkit/tinyfiledialogs.git
-    GIT_TAG master
+    nfd
+    GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
+    GIT_TAG v1.2.1
 )
-FetchContent_MakeAvailable(tinyfiledialogs)
-
-add_library(tinyfiledialogs STATIC
-    ${tinyfiledialogs_SOURCE_DIR}/tinyfiledialogs.c
-)
-
-target_include_directories(tinyfiledialogs PUBLIC
-    ${tinyfiledialogs_SOURCE_DIR}
-)
-
-if(WIN32)
-    target_link_libraries(tinyfiledialogs PUBLIC comdlg32 ole32)
+if(UNIX AND NOT APPLE)
+    set(NFD_PORTAL ON CACHE BOOL "" FORCE)
 endif()
+FetchContent_MakeAvailable(nfd)
 
 add_executable(eliott-hub
     src/main.cpp
@@ -70,6 +61,7 @@ add_executable(eliott-hub
     src/ProcessLauncher.cpp
     src/Updater.cpp
     src/ProjectRepository.cpp
+    src/PortableCMake.cpp
 )
 
 target_include_directories(eliott-hub PRIVATE
@@ -84,7 +76,7 @@ target_compile_definitions(eliott-hub PRIVATE
 target_link_libraries(eliott-hub PRIVATE
     imgui
     OpenGL::GL
-    tinyfiledialogs
+    nfd::nfd
 )
 
 if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

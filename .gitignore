@@ -1,5 +1,7 @@
 build/
 build-windows/
+build-win/
+tools/
 .cache
 cmake/
 compile_commands.json
