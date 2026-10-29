@@ -96,9 +96,60 @@ void writeCMake(std::string _path, std::string _projectName) {
 
 void writeGitIgnore(std::string _path) {
   std::ofstream outfile(_path + "/.gitignore");
-  std::string data = "build\n .cache\n .a\n .o\n\n";
+  // Pas d'espace en debut de ligne : git les prendrait au pied de la lettre.
+  // .cache/ = index de clangd.
+  std::string data = "build/\n.cache/\n*.a\n*.o\n";
   outfile << data;
   outfile.close();
+}
+
+// Reglages VS Code + clangd du projet : autocompletion et saut a la
+// definition des la premiere ouverture (base de compilation dans build/,
+// headers de MinGW trouves via --query-driver), sans IntelliSense ni IA.
+void writeEditorSetup(std::string _path) {
+  std::error_code ec;
+  std::filesystem::create_directories(_path + "/.vscode", ec);
+
+  std::ofstream settings(_path + "/.vscode/settings.json");
+  settings << "{\n"
+              "    \"C_Cpp.intelliSenseEngine\": \"disabled\",\n"
+              "    \"clangd.arguments\": [\n"
+              "        \"--compile-commands-dir=${workspaceFolder}/build\",\n"
+              "        \"--query-driver=**/g++*,**/gcc*,**/c++*\",\n"
+              "        \"--header-insertion=never\"\n"
+              "    ],\n"
+              "    \"github.copilot.enable\": { \"*\": false },\n"
+              "    \"chat.disableAIFeatures\": true\n"
+              "}\n";
+  settings.close();
+
+  std::ofstream extensions(_path + "/.vscode/extensions.json");
+  extensions << "{\n"
+                "    \"recommendations\": [\"llvm-vs-code-extensions.vscode-clangd\"],\n"
+                "    \"unwantedRecommendations\": [\"ms-vscode.cpptools\", "
+                "\"github.copilot\", \"github.copilot-chat\"]\n"
+                "}\n";
+  extensions.close();
+
+  std::ofstream clangd(_path + "/.clangd");
+  clangd << "CompileFlags:\n  CompilationDatabase: build\n";
+  clangd.close();
+}
+
+// Extension clangd de VS Code (elle telecharge clangd elle-meme au premier
+// lancement). Best effort : sans VS Code ou hors ligne, on ne bloque rien.
+void installClangdExtension() {
+  if (!isToolInstalled("code"))
+    return;
+#ifdef _WIN32
+  const char *devNull = " > NUL 2>&1";
+#else
+  const char *devNull = " > /dev/null 2>&1";
+#endif
+  std::system(
+      (std::string("code --install-extension llvm-vs-code-extensions.vscode-clangd") +
+       devNull)
+          .c_str());
 }
 
 void writeMain(std::string _path, std::string _projectName) {
@@ -382,6 +433,7 @@ void ProjectRepository::StartCreateProject(const std::string &name,
     std::filesystem::create_directories(projectPath / "src", ec);
     writeCMake(projectPath.string(), name);
     writeGitIgnore(projectPath.string());
+    writeEditorSetup(projectPath.string());
     writeMain(projectPath.string(), name);
     writeEntityExemple(projectPath.string());
     writeEmptyRegisters(projectPath.string());
@@ -397,6 +449,8 @@ void ProjectRepository::StartCreateProject(const std::string &name,
     if (result != "Nice") {
       m_createWarning = result;
     }
+    m_createStatus = "Extension clangd pour VS Code...";
+    installClangdExtension();
 
     m_createOk =
         !ec && CheckProject(projectPath.string()) == ProjectStatus::Valid;
